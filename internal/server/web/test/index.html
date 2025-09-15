@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GoLLMCore Test UI</title>
+  <link rel="stylesheet" href="/test/style.css" />
+</head>
+<body>
+  <main>
+    <h1>GoLLMCore Test UI</h1>
+    <section class="controls">
+      <button id="recordBtn">Start Recording</button>
+      <label>Model:
+        <select id="modelSelect">
+          <option value="tiny">tiny</option>
+          <option value="base" selected>base</option>
+          <option value="small">small</option>
+          <option value="medium">medium</option>
+          <option value="large-v2">large-v2</option>
+          <option value="large-v3">large-v3</option>
+        </select>
+      </label>
+      <span id="status" class="status">Idle</span>
+    </section>
+    <section>
+      <h2>Transcription</h2>
+      <pre id="transcript"></pre>
+    </section>
+    <section>
+      <h2>Embeddings Test</h2>
+      <div class="emb-controls">
+        <textarea id="embedText" rows="3" placeholder="Type text to embed or use transcript above..."></textarea>
+        <button id="embedBtn">Embed Text</button>
+      </div>
+    </section>
+    <section>
+      <h2>TTS (Piper)</h2>
+      <div class="emb-controls">
+        <textarea id="ttsText" rows="2" placeholder="Text to synthesize..."></textarea>
+        <select id="ttsVoice">
+          <option value="en_US-amy-medium" selected>en_US-amy-medium</option>
+        </select>
+        <button id="ttsBtn">Speak</button>
+      </div>
+      <audio id="ttsAudio" controls></audio>
+    </section>
+    <section>
+      <h2>Embeddings</h2>
+      <div id="embMeta"></div>
+      <pre id="embPreview"></pre>
+    </section>
+    <section>
+      <h2>Log</h2>
+      <pre id="log"></pre>
+    </section>
+  </main>
+  <script src="/test/app.js"></script>
+</body>
+</html>

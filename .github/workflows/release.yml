@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: windows
+            goarch: amd64
+            ext: .exe
+            archive: zip
+          - goos: darwin
+            goarch: amd64
+            ext: ""
+            archive: tar.gz
+          - goos: darwin
+            goarch: arm64
+            ext: ""
+            archive: tar.gz
+          - goos: linux
+            goarch: amd64
+            ext: ""
+            archive: tar.gz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist/pkg
+          go build -trimpath -ldflags="-s -w" -o dist/pkg/gollmcore${{ matrix.ext }} ./cmd/gollmcore
+          cp configs/example-config.json dist/pkg/
+          cp README.md dist/pkg/ || true
+          cp -r docs dist/pkg/docs || true
+      - name: Package (zip)
+        if: matrix.archive == 'zip'
+        run: |
+          cd dist
+          7z a gollmcore-${{ matrix.goos }}-${{ matrix.goarch }}.zip ./pkg/*
+      - name: Package (tar.gz)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          cd dist
+          tar -czf gollmcore-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz -C pkg .
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gollmcore-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/gollmcore-*.zip
+            dist/**/gollmcore-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

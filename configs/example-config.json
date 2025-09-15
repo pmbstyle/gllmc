@@ -1,0 +1,29 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 9000,
+    "data_dir": ""
+  },
+  "services": {
+    "stt": {
+      "enabled": true,
+      "model": "base"
+    },
+    "embeddings": {
+      "enabled": true,
+      "backend": "fastembed",
+      "model": "sentence-transformers/all-MiniLM-L6-v2"
+    },
+    "tts": {
+      "enabled": true,
+      "voice": "en_US-amy-medium"
+    }
+  },
+  "websocket": {
+    "enabled": true,
+    "path_prefix": "/ws"
+  },
+  "test_ui": {
+    "enabled": true
+  }
+}

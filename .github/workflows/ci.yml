@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+      - name: Download modules
+        run: go mod download
+      - name: Run unit tests
+        run: go test -v ./...
+
+  build:
+    name: Build Matrix
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: windows
+            goarch: amd64
+            ext: .exe
+          - goos: darwin
+            goarch: amd64
+            ext: ""
+          - goos: darwin
+            goarch: arm64
+            ext: ""
+          - goos: linux
+            goarch: amd64
+            ext: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags="-s -w" -o dist/gollmcore${{ matrix.ext }} ./cmd/gollmcore
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gollmcore-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+
+  smoke-linux:
+    name: Smoke Run (Linux)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gollmcore-linux-amd64
+          path: dist
+      - name: Create minimal config
+        run: |
+          cat > ci-config.json <<EOF
+          {
+            "server": { "host": "127.0.0.1", "port": 8765, "data_dir": "" },
+            "services": {
+              "stt": { "enabled": false, "model": "base" },
+              "embeddings": { "enabled": false, "backend": "hash", "model": "hash-embeddings-384" },
+              "tts": { "enabled": false, "voice": "en_US-amy-medium" }
+            },
+            "websocket": { "enabled": false, "path_prefix": "/ws" },
+            "test_ui": { "enabled": false }
+          }
+          EOF
+      - name: Start server
+        run: |
+          chmod +x dist/gollmcore
+          nohup ./dist/gollmcore --config ci-config.json >/tmp/s.out 2>/tmp/s.err & echo $! > /tmp/pid
+          sleep 2
+      - name: Check health
+        run: |
+          curl -fsSL http://127.0.0.1:8765/healthz
+      - name: Stop server
+        if: always()
+        run: |
+          kill $(cat /tmp/pid) || true
+          sleep 1
+
