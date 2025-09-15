@@ -19,7 +19,6 @@ type STT struct {
 
 type Embeddings struct {
     Enabled bool   `json:"enabled"`
-    Backend string `json:"backend"`   // fastembed|hash
     Model   string `json:"model"`
 }
 
@@ -55,8 +54,7 @@ func Load(path string) (Config, error) {
     if c.Server.Port == 0 { c.Server.Port = 8080 }
     if c.WebSocket.PathPrefix == "" { c.WebSocket.PathPrefix = "/ws" }
     if c.Services.STT.Model == "" { c.Services.STT.Model = "base" }
-    if c.Services.Embeddings.Backend == "" { c.Services.Embeddings.Backend = "fastembed" }
-    if c.Services.Embeddings.Model == "" { c.Services.Embeddings.Model = "sentence-transformers/all-MiniLM-L6-v2" }
+    if c.Services.Embeddings.Model == "" { c.Services.Embeddings.Model = "all-MiniLM-L6-v2" }
     if c.Services.TTS.Voice == "" { c.Services.TTS.Voice = "en_US-amy-medium" }
     return c, nil
 }

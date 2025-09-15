@@ -11,8 +11,7 @@
     },
     "embeddings": {
       "enabled": true,
-      "backend": "fastembed",
-      "model": "sentence-transformers/all-MiniLM-L6-v2"
+      "model": "all-MiniLM-L6-v2"
     },
     "tts": {
       "enabled": true,

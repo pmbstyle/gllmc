@@ -37,7 +37,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestBasicE2E_HealthAndEmbed(t *testing.T) {
-    emb, _ := embeddings.NewWithBackend(embeddings.Config{Backend: "hash", ModelName: "hash-embeddings-384"})
+    emb := embeddings.New(embeddings.Config{ModelName: "all-MiniLM-L6-v2"})
     ts := newTestServer(t, emb)
     defer ts.Close()
 
@@ -61,7 +61,7 @@ func TestBasicE2E_HealthAndEmbed(t *testing.T) {
 }
 
 func TestEmbeddings_SingleAndBatch(t *testing.T) {
-    emb, _ := embeddings.NewWithBackend(embeddings.Config{Backend: "hash", ModelName: "hash-embeddings-384"})
+    emb := embeddings.New(embeddings.Config{ModelName: "all-MiniLM-L6-v2"})
     ts := newTestServer(t, emb)
     defer ts.Close()
 
@@ -94,7 +94,7 @@ func TestEmbeddings_SingleAndBatch(t *testing.T) {
 }
 
 func TestEmbeddings_BadInput(t *testing.T) {
-    emb, _ := embeddings.NewWithBackend(embeddings.Config{Backend: "hash", ModelName: "hash-embeddings-384"})
+    emb := embeddings.New(embeddings.Config{ModelName: "all-MiniLM-L6-v2"})
     ts := newTestServer(t, emb)
     defer ts.Close()
 

@@ -49,23 +49,15 @@ func main() {
         log.Printf("STT service enabled with model: %s", c.Services.STT.Model)
     }
 
-    chosenEmbBackend := ""
     if c.Services.Embeddings.Enabled {
-        embCfg := embeddings.Config{
-            ModelName: c.Services.Embeddings.Model,
-            ModelDir:  filepath.Join(dataDir, "models", "embeddings"),
-            Backend:   c.Services.Embeddings.Backend,
-            WorkDir:   filepath.Join(dataDir, "embeddings"),
-        }
-        svc, err := embeddings.NewWithBackend(embCfg)
+        // Use real MiniLM ONNX-backed embeddings
+        modelDir := filepath.Join(dataDir, "models", "embeddings", "all-MiniLM-L6-v2")
+        svc, err := embeddings.NewMiniLM(modelDir)
         if err != nil {
-            log.Printf("embedding backend init failed (%v); falling back to hash", err)
-            embCfg.Backend = "hash"
-            svc, _ = embeddings.NewWithBackend(embCfg)
+            log.Fatalf("failed to init embeddings (MiniLM ONNX): %v", err)
         }
         embSvc = svc
-        chosenEmbBackend = embCfg.Backend
-        log.Printf("Embeddings service enabled with model: %s (backend=%s)", embCfg.ModelName, chosenEmbBackend)
+        log.Printf("Embeddings service enabled with model: %s", "all-MiniLM-L6-v2")
     }
 
     if c.Services.TTS.Enabled {
@@ -107,7 +99,7 @@ func main() {
     }
     embStatus := "disabled"
     if embSvc != nil {
-        embStatus = "enabled (backend=" + chosenEmbBackend + ", model=" + c.Services.Embeddings.Model + ")"
+        embStatus = "enabled (model=all-MiniLM-L6-v2)"
     }
     wsStatus := "disabled"
     if c.WebSocket.Enabled { wsStatus = "enabled (prefix=" + c.WebSocket.PathPrefix + ")" }

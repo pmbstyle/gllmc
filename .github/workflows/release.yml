@@ -8,26 +8,30 @@ on:
 jobs:
   build:
     name: Build Release Artifacts
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - goos: windows
+          - os: windows-latest
+            goos: windows
             goarch: amd64
             ext: .exe
             archive: zip
-          - goos: darwin
+          - os: macos-13
+            goos: darwin
             goarch: amd64
             ext: ""
             archive: tar.gz
-          - goos: darwin
+          - os: macos-14
+            goos: darwin
             goarch: arm64
             ext: ""
             archive: tar.gz
-          - goos: linux
+          - os: ubuntu-latest
+            goos: linux
             goarch: amd64
             ext: ""
             archive: tar.gz
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -37,7 +41,7 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
+          CGO_ENABLED: 1
         run: |
           mkdir -p dist/pkg
           go build -trimpath -ldflags="-s -w" -o dist/pkg/gollmcore${{ matrix.ext }} ./cmd/gollmcore
@@ -80,4 +84,3 @@ jobs:
             dist/**/gollmcore-*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

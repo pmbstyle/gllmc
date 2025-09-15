@@ -19,16 +19,8 @@ func TestE2E_Embeddings_FastEmbed(t *testing.T) {
         t.Skip("skipping fastembed e2e, set E2E_EMB=1 to enable")
     }
     model := os.Getenv("E2E_EMB_MODEL")
-    if model == "" { model = "sentence-transformers/all-MiniLM-L6-v2" }
-
-    dataDir := t.TempDir()
-    emb, err := embeddings.NewWithBackend(embeddings.Config{
-        Backend:   "fastembed",
-        ModelName: model,
-        ModelDir:  dataDir,
-        WorkDir:   dataDir,
-    })
-    if err != nil { t.Skipf("fastembed init failed: %v", err) }
+    if model == "" { model = "all-MiniLM-L6-v2" }
+    emb := embeddings.New(embeddings.Config{ ModelName: model })
 
     mux := http.NewServeMux()
     server.RegisterRoutes(mux, server.Dependencies{ Embeddings: emb })
