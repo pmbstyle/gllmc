@@ -16,15 +16,6 @@
     "tts": {
       "enabled": true,
       "voice": "en_US-amy-medium"
-    },
-    "llm": {
-      "enabled": true,
-      "model": {
-        "name": "Qwen2.5-3B-Instruct-Q4_K_M",
-        "filename": "qwen2.5-3b-instruct-q4_k_m.gguf",
-        "url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"
-      },
-      "options": { "threads": 0, "ctx_len": 4096, "gpu_layers": 0 }
     }
   },
   "websocket": {

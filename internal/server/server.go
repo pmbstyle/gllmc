@@ -20,7 +20,6 @@ type Dependencies struct {
     STTDefaultModel string
     Embeddings      embeddings.Service
     TTS             TTSService
-    LLM             LLMService
 }
 
 func RegisterRoutes(mux *http.ServeMux, d Dependencies) {
@@ -60,17 +59,6 @@ func RegisterRoutes(mux *http.ServeMux, d Dependencies) {
         mux.HandleFunc("/v1/tts", func(w http.ResponseWriter, r *http.Request) {
             if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
             handleTTS(w, r, d)
-        })
-    }
-
-    if d.LLM != nil {
-        mux.HandleFunc("/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
-            if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
-            d.LLM.ProxyChatCompletions(w, r)
-        })
-        mux.HandleFunc("/v1/completions", func(w http.ResponseWriter, r *http.Request) {
-            if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
-            d.LLM.ProxyCompletions(w, r)
         })
     }
 }
