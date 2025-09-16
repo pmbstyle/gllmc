@@ -16,7 +16,9 @@ import (
     "gollmcore/internal/server"
     "gollmcore/internal/services/embeddings"
     ttsvc "gollmcore/internal/services/tts"
+    llmsvc "gollmcore/internal/services/llm"
     "gollmcore/internal/services/stt"
+    "strings"
 )
 
 func main() {
@@ -42,6 +44,7 @@ func main() {
     var sttSvc *stt.STTService
     var embSvc embeddings.Service
     var ttsSvc *ttsvc.Service
+    var llmSvc *llmsvc.Service
 
     if c.Services.STT.Enabled {
         sttSvc = stt.New(filepath.Join(dataDir, "bin"), filepath.Join(dataDir, "models", "whisper"))
@@ -65,6 +68,57 @@ func main() {
         log.Printf("TTS service enabled with voice: %s", c.Services.TTS.Voice)
     }
 
+    if c.Services.LLM.Enabled {
+        if strings.EqualFold(c.Services.LLM.Backend, "qwen-onnx") || c.Services.LLM.Backend == "" {
+            // Use ONNX in-process backend for Qwen3-0.6B
+            modelDir := filepath.Join(dataDir, "models", "llm", "qwen3-0.6b")
+            // Prefer FP32 first, then FP16 fallback
+            onnxURL := c.Services.LLM.Model.OnnxURL
+            if onnxURL == "" {
+                onnxURL = "https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX/resolve/main/onnx/model_fp32.onnx"
+            }
+            tokURL := c.Services.LLM.Model.TokenizerURL
+            if tokURL == "" {
+                tokURL = "https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX/resolve/main/tokenizer.json"
+            }
+            qwen, err := llmsvc.NewQwenONNX(modelDir, onnxURL, tokURL)
+            if err != nil { log.Fatalf("failed to init Qwen ONNX backend: %v", err) }
+            // Wrap QwenONNX into proxy-like handlers
+            llmSvc = llmsvc.New(
+                filepath.Join(dataDir, "bin"),
+                filepath.Join(dataDir, "models", "llm"),
+                filepath.Join(dataDir, "llm"),
+                "", "", "", 0, 0, 0,
+            )
+            // Replace proxy handlers to call qwen.Generate
+            // We piggyback the existing proxy endpoints by adding local handlers below.
+            // For simplicity, we reuse server routes:
+            // We'll assign llmSvc with custom Proxy methods via closure in server.RegisterRoutes
+            // Done below via Dependencies: LLM remains llmSvc; server will call its methods.
+            // We inject function pointers using package-level variables (hacky, but minimal change).
+            llmsvc.LlmsvcSetLocal(qwen)
+            log.Printf("LLM service enabled with Qwen3-0.6B-ONNX backend")
+        } else {
+            // Fallback to llama.cpp proxy if configured
+            llmBinDir := filepath.Join(dataDir, "bin")
+            llmModelDir := filepath.Join(dataDir, "models", "llm")
+            llmWorkDir := filepath.Join(dataDir, "llm")
+            llmSvc = llmsvc.New(
+                llmBinDir,
+                llmModelDir,
+                llmWorkDir,
+                c.Services.LLM.Model.URL,
+                c.Services.LLM.Model.Filename,
+                c.Services.LLM.BinaryURL,
+                c.Services.LLM.Options.Threads,
+                c.Services.LLM.Options.CtxLen,
+                c.Services.LLM.Options.GPULayers,
+            )
+            if err := llmSvc.EnsureReady(ctx); err != nil { log.Fatalf("failed to start LLM service: %v", err) }
+            log.Printf("LLM service enabled (llama proxy) with model: %s", c.Services.LLM.Model.Name)
+        }
+    }
+
     // Start HTTP server
     mux := http.NewServeMux()
     server.RegisterRoutes(mux, server.Dependencies{
@@ -72,6 +126,7 @@ func main() {
         STTDefaultModel: c.Services.STT.Model,
         Embeddings:      embSvc,
         TTS:             ttsSvc,
+        LLM:             llmSvc,
     })
 
     // Optional WebSocket endpoints

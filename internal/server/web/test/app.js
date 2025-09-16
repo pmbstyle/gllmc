@@ -12,6 +12,9 @@
   const ttsText = document.getElementById('ttsText');
   const ttsVoice = document.getElementById('ttsVoice');
   const ttsAudio = document.getElementById('ttsAudio');
+  const llmBtn = document.getElementById('llmBtn');
+  const llmText = document.getElementById('llmText');
+  const llmOut = document.getElementById('llmOut');
 
   let recording = false;
   let audioCtx;
@@ -202,6 +205,33 @@
     embPreviewEl.textContent = JSON.stringify(vec.slice(0, 16)) + (vec.length > 16 ? ' ...' : '');
     log('Embeddings received');
   }
+
+  llmBtn?.addEventListener('click', async () => {
+    const prompt = (llmText.value || '').trim();
+    if (!prompt) { log('LLM: prompt is empty'); return; }
+    try {
+      log('LLM: sending chat.completions request...');
+      const body = {
+        model: 'local',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: prompt },
+        ],
+        stream: false
+      };
+      const resp = await fetch('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json().catch(() => ({}));
+      llmOut.textContent = JSON.stringify(data, null, 2);
+      if (!resp.ok) log('LLM error: ' + resp.status);
+      else log('LLM: response received');
+    } catch (e) {
+      log('LLM request failed: ' + e.message);
+    }
+  });
 
   async function speakWS(text, voice) {
     const wsURL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/tts';
