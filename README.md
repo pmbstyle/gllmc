@@ -2,7 +2,7 @@
 <img width="250" height="250" alt="gllmc" src="https://github.com/user-attachments/assets/1d45be74-d6c8-46fb-803c-854fc83f8111" />
 </p>
 
-## Go LLM Core — Local, Modular LLM Backend
+## Go LLM Core - Local, Modular LLM Backend
 
 A single Go binary that runs local LLM APIs on Windows, macOS, and Linux.
 
